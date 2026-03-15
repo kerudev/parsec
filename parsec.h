@@ -5,13 +5,13 @@
 
 #include <stdbool.h>    // for bool
 
-void parsec_bool(bool *ref, const char short_name, const char *long_name, const char *desc);
+void parsec_bool(bool *ref, const char *s, const char *l, const char *desc);
 
-void parsec_int(int *ref, const char short_name, const char *long_name, const char *desc);
+void parsec_int(int *ref, const char *s, const char *l, const char *desc);
 
-// int parsec_float(float *ref, const char short_name, const char *long_name, const char *desc);
+// int parsec_float(float *ref, const char *s, const char *l, const char *desc);
 
-// int parsec_str(char **ref, const char short_name, const char *long_name, const char *desc);
+// int parsec_str(char **ref, const char *s, const char *l, const char *desc);
 
 int parsec_help();
 
@@ -40,7 +40,7 @@ typedef enum {
 } ParsecType;
 
 typedef struct {
-    char short_name;
+    char *short_name;
     char *long_name;
 
     char *desc;
@@ -63,9 +63,9 @@ static ParsecContext parsec;
 
 // Private
 
-ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char short_name, const char *long_name, const char *desc, ParsecType type);
+ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char *s, const char *l, const char *desc, ParsecType type);
 
-ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char short_name, const char *long_name, const char *desc, ParsecType type) {
+ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char *s, const char *l, const char *desc, ParsecType type) {
     if (ctx->flags_len == ctx->flags_cap) {
         if (ctx->flags_cap == 0) ctx->flags_cap = 4;
         ctx->flags_cap *= 2;
@@ -76,8 +76,8 @@ ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char short_nam
     ParsecFlag *flag = malloc(sizeof(ParsecFlag));
 
     *flag = (ParsecFlag){
-        .short_name = short_name,
-        .long_name = long_name,
+        .short_name = s,
+        .long_name = l,
         .ref = ref,
         .desc = desc,
         .type = type,
@@ -88,19 +88,19 @@ ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char short_nam
     return flag;
 }
 
-void parsec_bool(bool *ref, const char short_name, const char *long_name, const char *desc) {
-    ParsecFlag *flag = parsec__add_flag(&parsec, ref, short_name, long_name, desc, PARSEC_BOOL);
+void parsec_bool(bool *ref, const char *s, const char *l, const char *desc) {
+    ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_BOOL);
     flag->value._bool = false;
 }
 
-void parsec_int(int *ref, const char short_name, const char *long_name, const char *desc) {
-    ParsecFlag *flag = parsec__add_flag(&parsec, ref, short_name, long_name, desc, PARSEC_INT);
+void parsec_int(int *ref, const char *s, const char *l, const char *desc) {
+    ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_INT);
     flag->value._int = 0;
 }
 
-// int parsec_float(float *ref, const char short_name, const char *long_name, const char *desc) {}
+// int parsec_float(float *ref, const char *s, const char *l, const char *desc) {}
 
-// int parsec_str(char **ref, const char short_name, const char *long_name, const char *desc) {}
+// int parsec_str(char **ref, const char *s, const char *l, const char *desc) {}
 
 int parsec_help() {
     if (parsec.desc) {
@@ -115,13 +115,13 @@ int parsec_help() {
         ParsecFlag *flag = parsec.flags[i];
 
         if (strlen(flag->long_name) == 0) {
-            printf("-%c        %s\n", flag->short_name, flag->desc);
+            printf("%s        %s\n", flag->short_name, flag->desc);
         }
-        else if (flag->short_name != '\0') {
-            printf("    --%s   %s\n", flag->long_name, flag->desc);
+        else if (strlen(flag->short_name) == 0) {
+            printf("    %s   %s\n", flag->long_name, flag->desc);
         }
         else {
-            printf("-%c, --%s   %s\n", flag->short_name, flag->long_name, flag->desc);
+            printf("%s, %s   %s\n", flag->short_name, flag->long_name, flag->desc);
         }
     }
 }
@@ -153,15 +153,15 @@ int parsec_parse(int argc, char** argv) {
         for (size_t i = 0; i < parsec.flags_len; i++) {
             ParsecFlag *flag = parsec.flags[i];
 
-            if (strcmp(arg, flag->long_name) == 0) {
+            if (strcmp(arg, flag->long_name) == 0 || strcmp(arg, flag->short_name) == 0) {
                 switch (flag->type) {
                 case PARSEC_BOOL:
-                    flag->value._bool = true;
+                    *(bool *)flag->ref = true;
                 break;
 
                 case PARSEC_INT:
                     char *val = parsec_shift(&argc, &argv);
-                    flag->value._int = atoi(val);
+                    *(int *)flag->ref = atoi(val);
                 break;
 
                 default:
@@ -170,8 +170,6 @@ int parsec_parse(int argc, char** argv) {
             }
         }
     }
-
-    parsec_help();
 
     return 0;
 }
