@@ -4,92 +4,120 @@
 #define PARSEC_H_
 
 #include <stdbool.h>    // for bool
-#include <stddef.h>     // for size_t
-#include <stdio.h>      // for printf
 
-typedef struct ParsecFlag {
-    char short_name;
-    char *long_name;
-    char *desc;
-    void *ref;
-} ParsecFlag;
+void parsec_bool(bool *ref, const char short_name, const char *long_name, const char *desc);
 
-typedef struct ParsecContext {
-    ParsecFlag **flags;
-    size_t len;
-} ParsecContext;
+void parsec_int(int *ref, const char short_name, const char *long_name, const char *desc);
 
-static ParsecContext parsec_ctx;
+// int parsec_float(float *ref, const char short_name, const char *long_name, const char *desc);
 
-/**
- * TODO
- */
-int parsec__add(void *ref, const char short_name, const char *long_name);
+// int parsec_str(char **ref, const char short_name, const char *long_name, const char *desc);
 
-/**
- *TODO
- */  
-int parsec_bool(bool *var, const char short_name, const char *long_name, char *desc);
-
-/**
- *TODO
- */  
-int parsec_int(int *var, const char short_name, const char *long_name, char *desc);
-
-/**
- *TODO
- */  
-int parsec_float(float *var, const char short_name, const char *long_name, char *desc);
-
-/**
- *TODO
- */  
-int parsec_str(char **var, const char short_name, const char *long_name, char *desc);
-
-/**
- * TODO
- */
 int parsec_help();
 
-/**
- * TODO
- */
-int parsec(int argc, char** argv);
+int parsec_init(const char *name, const char *desc);
+
+int parsec_parse(int argc, char** argv);
 
 #endif // PARSEC_H_
 
 #ifdef PARSEC_IMPLEMENTATION
 
-int parsec__add(void *ref, const char short_name, const char *long_name) {
+#include <stddef.h>     // for size_t
+#include <stdlib.h>     // for realloc(), atoi()
+#include <stdio.h>      // for printf()
+#include <assert.h>     // for assert()
+#include <string.h>     // for strlen(), strcmp()
 
+typedef union {
+    bool _bool;
+    int _int;
+} ParsecValue;
+
+typedef enum {
+    PARSEC_BOOL = 0,
+    PARSEC_INT  = 1,
+} ParsecType;
+
+typedef struct {
+    char short_name;
+    char *long_name;
+
+    char *desc;
+    void *ref;
+
+    ParsecType type;
+    ParsecValue value;
+} ParsecFlag;
+
+typedef struct {
+    char *name;
+    char *desc;
+
+    ParsecFlag **flags;
+    size_t flags_len;
+    size_t flags_cap;
+} ParsecContext;
+
+static ParsecContext parsec;
+
+// Private
+
+ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char short_name, const char *long_name, const char *desc, ParsecType type);
+
+ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char short_name, const char *long_name, const char *desc, ParsecType type) {
+    if (ctx->flags_len == ctx->flags_cap) {
+        if (ctx->flags_cap == 0) ctx->flags_cap = 4;
+        ctx->flags_cap *= 2;
+
+        ctx->flags = realloc(ctx->flags, ctx->flags_cap * sizeof(ParsecFlag *));
+    }
+
+    ParsecFlag *flag = malloc(sizeof(ParsecFlag));
+
+    *flag = (ParsecFlag){
+        .short_name = short_name,
+        .long_name = long_name,
+        .ref = ref,
+        .desc = desc,
+        .type = type,
+    };
+
+    ctx->flags[ctx->flags_len++] = flag;
+
+    return flag;
 }
 
-int parsec_bool(bool *var, const char short_name, const char *long_name, char *desc) {
-    // parsec__add();
+void parsec_bool(bool *ref, const char short_name, const char *long_name, const char *desc) {
+    ParsecFlag *flag = parsec__add_flag(&parsec, ref, short_name, long_name, desc, PARSEC_BOOL);
+    flag->value._bool = false;
 }
 
-int parsec_int(int *var, const char short_name, const char *long_name, char *desc) {
-
+void parsec_int(int *ref, const char short_name, const char *long_name, const char *desc) {
+    ParsecFlag *flag = parsec__add_flag(&parsec, ref, short_name, long_name, desc, PARSEC_INT);
+    flag->value._int = 0;
 }
 
-int parsec_float(float *var, const char short_name, const char *long_name, char *desc) {
+// int parsec_float(float *ref, const char short_name, const char *long_name, const char *desc) {}
 
-}
-
-int parsec_str(char **var, const char short_name, const char *long_name, char *desc) {
-
-}
+// int parsec_str(char **ref, const char short_name, const char *long_name, const char *desc) {}
 
 int parsec_help() {
-    printf("Help:\n");
+    if (parsec.desc) {
+        printf("%s - %s\n\n", parsec.name, parsec.desc);
+    } else {
+        printf("%s\n\n", parsec.name);
+    }
 
-    for (size_t i = 0; i < parsec_ctx.len; i++) {
-        ParsecFlag *flag = parsec_ctx.flags[i];
+    printf("Flags:\n");
 
-        if (flag->long_name == NULL) {
+    for (size_t i = 0; i < parsec.flags_len; i++) {
+        ParsecFlag *flag = parsec.flags[i];
+
+        if (strlen(flag->long_name) == 0) {
             printf("-%c        %s\n", flag->short_name, flag->desc);
         }
-        else if (flag->short_name == NULL) {
+        else if (flag->short_name != '\0') {
             printf("    --%s   %s\n", flag->long_name, flag->desc);
         }
         else {
@@ -98,8 +126,54 @@ int parsec_help() {
     }
 }
 
-int parsec(int argc, char** argv) {
-    // parsec_ctx = (ParsecContext *)malloc(argc * sizeof(ParsecArg));
+char *parsec_shift(int *argc, char ***argv) {
+    char *arg = **argv;
+
+    *argv += 1;
+    *argc -= 1;
+
+    return arg;
+}
+
+int parsec_init(const char *name, const char *desc) {
+    parsec.name = name;
+    parsec.desc = desc;
+}
+
+int parsec_parse(int argc, char** argv) {
+    char *program_name = parsec_shift(&argc, &argv);
+
+    if (parsec.name == NULL) {
+        parsec.name = program_name;
+    }
+
+    while (argc > 0) {
+        char *arg = parsec_shift(&argc, &argv);
+
+        for (size_t i = 0; i < parsec.flags_len; i++) {
+            ParsecFlag *flag = parsec.flags[i];
+
+            if (strcmp(arg, flag->long_name) == 0) {
+                switch (flag->type) {
+                case PARSEC_BOOL:
+                    flag->value._bool = true;
+                break;
+
+                case PARSEC_INT:
+                    char *val = parsec_shift(&argc, &argv);
+                    flag->value._int = atoi(val);
+                break;
+
+                default:
+                    exit(1);
+                }
+            }
+        }
+    }
+
+    parsec_help();
+
+    return 0;
 }
 
 #endif // PARSEC_IMPLEMENTATION
