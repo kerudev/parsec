@@ -1,4 +1,15 @@
 // parsec.h - A simple argument parser in C.
+//
+// To use the implementation, define `PARSEC_IMPLEMENTATION` before including:
+//
+// #define PARSEC_IMPLEMENTATION
+// #include "parsec.h"
+//
+// Library macros:
+// - `PARSEC_DEBUG`: adds debug information on error logs.
+//
+// Function macros:
+// - `PARSEC_THROW`: returns a value and prints an error message.
 
 #ifndef PARSEC_H_
 #define PARSEC_H_
@@ -9,15 +20,15 @@ void parsec_bool(bool *ref, const char *s, const char *l, const char *desc);
 
 void parsec_int(int *ref, const char *s, const char *l, const char *desc);
 
-// int parsec_float(float *ref, const char *s, const char *l, const char *desc);
+int parsec_float(float *ref, const char *s, const char *l, const char *desc);
 
-// int parsec_str(char **ref, const char *s, const char *l, const char *desc);
+int parsec_str(char **ref, const char *s, const char *l, const char *desc);
 
 int parsec_help();
 
-int parsec_init(const char *name, const char *desc);
+void parsec_init(const char *name, const char *desc);
 
-int parsec_parse(int argc, char** argv);
+bool parsec_parse(int argc, char** argv);
 
 #endif // PARSEC_H_
 
@@ -28,15 +39,20 @@ int parsec_parse(int argc, char** argv);
 #include <stdio.h>      // for printf()
 #include <assert.h>     // for assert()
 #include <string.h>     // for strlen(), strcmp()
+#include <stdarg.h>     // for va_list
 
 typedef union {
     bool _bool;
     int _int;
+    float _float;
+    char *_str;
 } ParsecValue;
 
 typedef enum {
-    PARSEC_BOOL = 0,
-    PARSEC_INT  = 1,
+    PARSEC_BOOL  = 0,
+    PARSEC_INT   = 1,
+    PARSEC_FLOAT = 2,
+    PARSEC_STR   = 3,
 } ParsecType;
 
 typedef struct {
@@ -60,6 +76,27 @@ typedef struct {
 } ParsecContext;
 
 static ParsecContext parsec;
+
+#ifdef PARSEC_DEBUG
+static void __parsec_err(const char *file, int line, const char *func, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    fprintf(stderr, "[%s:%d] %s: ", file, line, func);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+    va_end(args);
+}
+#define PARSEC_THROW(ret, fmt, ...) ({ __parsec_err(__FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__); return ret; })
+#else
+static void __parsec_err(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+    va_end(args);
+}
+#define PARSEC_THROW(ret, fmt, ...) ({ __parsec_err(fmt, ##__VA_ARGS__); return ret; })
+#endif
 
 // Private
 
@@ -98,16 +135,20 @@ void parsec_int(int *ref, const char *s, const char *l, const char *desc) {
     flag->value._int = 0;
 }
 
-// int parsec_float(float *ref, const char *s, const char *l, const char *desc) {}
+int parsec_float(float *ref, const char *s, const char *l, const char *desc) {
+    ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_FLOAT);
+    flag->value._float = 0.0f;
+}
 
-// int parsec_str(char **ref, const char *s, const char *l, const char *desc) {}
+int parsec_str(char **ref, const char *s, const char *l, const char *desc) {
+    ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_STR);
+    flag->value._str = "";
+}
 
 int parsec_help() {
-    if (parsec.desc) {
-        printf("%s - %s\n\n", parsec.name, parsec.desc);
-    } else {
-        printf("%s\n\n", parsec.name);
-    }
+    printf("%s", parsec.name);
+    if (parsec.desc) printf(" - %s", parsec.desc);
+    printf("\n\n");
 
     printf("Flags:\n");
 
@@ -135,12 +176,12 @@ char *parsec_shift(int *argc, char ***argv) {
     return arg;
 }
 
-int parsec_init(const char *name, const char *desc) {
+void parsec_init(const char *name, const char *desc) {
     parsec.name = name;
     parsec.desc = desc;
 }
 
-int parsec_parse(int argc, char** argv) {
+bool parsec_parse(int argc, char** argv) {
     char *program_name = parsec_shift(&argc, &argv);
 
     if (parsec.name == NULL) {
@@ -158,15 +199,37 @@ int parsec_parse(int argc, char** argv) {
                 exit(0);
             }
 
-            if (strcmp(arg, flag->short_name) == 0 || strcmp(arg, flag->long_name) == 0) {
+            char *s = flag->short_name;
+            char *l = flag->long_name;
+
+            if (strcmp(arg, s) == 0 || strcmp(arg, l) == 0) {
                 switch (flag->type) {
-                case PARSEC_BOOL:
+                case PARSEC_BOOL: {
                     *(bool *)flag->ref = true;
+                }
                 break;
 
-                case PARSEC_INT:
+                case PARSEC_INT: {
                     char *val = parsec_shift(&argc, &argv);
                     *(int *)flag->ref = atoi(val);
+                } 
+                break;
+
+                case PARSEC_FLOAT: {
+                    char *val = parsec_shift(&argc, &argv);
+
+                    char *endptr;
+                    *(float *)flag->ref = strtof(val, &endptr);
+
+                    if (*endptr != '\0')
+                        PARSEC_THROW(false, "error parsing \"%s/%s\" to float: %s", s, l, val);
+                }
+                break;
+
+                case PARSEC_STR: {
+                    char *val = parsec_shift(&argc, &argv);
+                    *(char **)flag->ref = val;
+                }
                 break;
 
                 default:
@@ -176,7 +239,7 @@ int parsec_parse(int argc, char** argv) {
         }
     }
 
-    return 0;
+    return true;
 }
 
 #endif // PARSEC_IMPLEMENTATION
