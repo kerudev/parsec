@@ -153,7 +153,12 @@ int parsec_parse(int argc, char** argv) {
         for (size_t i = 0; i < parsec.flags_len; i++) {
             ParsecFlag *flag = parsec.flags[i];
 
-            if (strcmp(arg, flag->long_name) == 0 || strcmp(arg, flag->short_name) == 0) {
+            if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
+                parsec_help();
+                exit(0);
+            }
+
+            if (strcmp(arg, flag->short_name) == 0 || strcmp(arg, flag->long_name) == 0) {
                 switch (flag->type) {
                 case PARSEC_BOOL:
                     *(bool *)flag->ref = true;
