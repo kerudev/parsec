@@ -16,15 +16,29 @@
 
 #include <stdbool.h>    // for bool
 
+#ifndef PARSEC_LIST_CAP
+#define PARSEC_LIST_CAP 8
+#endif // PARSEC_LIST_CAP
+
+typedef struct {
+    char **items;
+    size_t len;
+    size_t cap;
+} ParsecList;
+
+void parsec_da_free(ParsecList list);
+
 void parsec_bool(bool *ref, const char *s, const char *l, const char *desc);
 
 void parsec_int(int *ref, const char *s, const char *l, const char *desc);
 
-int parsec_float(float *ref, const char *s, const char *l, const char *desc);
+void parsec_float(float *ref, const char *s, const char *l, const char *desc);
 
-int parsec_str(char **ref, const char *s, const char *l, const char *desc);
+void parsec_str(char **ref, const char *s, const char *l, const char *desc);
 
-int parsec_help();
+void parsec_list(ParsecList *ref, const char *s, const char *l, const char *desc);
+
+void parsec_help();
 
 void parsec_init(const char *name, const char *desc);
 
@@ -37,7 +51,6 @@ bool parsec_parse(int argc, char** argv);
 #include <stddef.h>     // for size_t
 #include <stdlib.h>     // for realloc(), atoi()
 #include <stdio.h>      // for printf()
-#include <assert.h>     // for assert()
 #include <string.h>     // for strlen(), strcmp()
 #include <stdarg.h>     // for va_list
 
@@ -46,13 +59,21 @@ typedef union {
     int _int;
     float _float;
     char *_str;
+    ParsecList *_list;
 } ParsecValue;
 
 typedef enum {
-    PARSEC_BOOL  = 0,
-    PARSEC_INT   = 1,
-    PARSEC_FLOAT = 2,
-    PARSEC_STR   = 3,
+    PARSEC_BOOL     = 0,
+    PARSEC_INT      = 1,
+    PARSEC_FLOAT    = 2,
+    // PARSEC_DOUBLE   = 3,
+    // PARSEC_SIZE     = 4,
+    // PARSEC_CHAR     = 5,
+    PARSEC_STR      = 6,
+    // PARSEC_STRING   = 6,
+    PARSEC_LIST     = 8,
+    // PARSEC_MULTIPLE = 9,
+    // PARSEC_ENUM     = 10,
 } ParsecType;
 
 typedef struct {
@@ -98,9 +119,13 @@ static void __parsec_err(const char *fmt, ...) {
 #define PARSEC_THROW(ret, fmt, ...) ({ __parsec_err(fmt, ##__VA_ARGS__); return ret; })
 #endif
 
-// Private
+// Private declarations
 
 ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char *s, const char *l, const char *desc, ParsecType type);
+
+char *parsec_str_clone(const char *s);
+
+// Private implementations
 
 ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char *s, const char *l, const char *desc, ParsecType type) {
     if (ctx->flags_len == ctx->flags_cap) {
@@ -125,6 +150,23 @@ ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char *s, const
     return flag;
 }
 
+char *parsec_str_clone(const char *s) {
+    size_t len = strlen(s) + 1;
+    char *copy = malloc(len);
+    if (!copy) PARSEC_THROW(NULL, "malloc error");
+
+    for (size_t i = 0; i < len; i++) copy[i] = s[i];
+
+    return copy;
+}
+
+// Public
+
+void parsec_da_free(ParsecList list) {
+    for (size_t i = 0; i < list.len; i++) free(list.items[i]);
+    free(list.items);
+}
+
 void parsec_bool(bool *ref, const char *s, const char *l, const char *desc) {
     ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_BOOL);
     flag->value._bool = false;
@@ -135,17 +177,21 @@ void parsec_int(int *ref, const char *s, const char *l, const char *desc) {
     flag->value._int = 0;
 }
 
-int parsec_float(float *ref, const char *s, const char *l, const char *desc) {
+void parsec_float(float *ref, const char *s, const char *l, const char *desc) {
     ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_FLOAT);
     flag->value._float = 0.0f;
 }
 
-int parsec_str(char **ref, const char *s, const char *l, const char *desc) {
+void parsec_str(char **ref, const char *s, const char *l, const char *desc) {
     ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_STR);
     flag->value._str = "";
 }
 
-int parsec_help() {
+void parsec_list(ParsecList *ref, const char *s, const char *l, const char *desc) {
+    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_LIST);
+}
+
+void parsec_help() {
     printf("%s", parsec.name);
     if (parsec.desc) printf(" - %s", parsec.desc);
     printf("\n\n");
@@ -221,14 +267,41 @@ bool parsec_parse(int argc, char** argv) {
                     char *endptr;
                     *(float *)flag->ref = strtof(val, &endptr);
 
-                    if (*endptr != '\0')
-                        PARSEC_THROW(false, "error parsing \"%s/%s\" to float: %s", s, l, val);
+                    if (*endptr != '\0') PARSEC_THROW(false, "error parsing '%s' to float: %s", arg, val);
                 }
                 break;
 
                 case PARSEC_STR: {
                     char *val = parsec_shift(&argc, &argv);
                     *(char **)flag->ref = val;
+                }
+                break;
+
+                case PARSEC_LIST: {
+                    char *val = parsec_shift(&argc, &argv);
+
+                    char **items = malloc(sizeof(char *) * PARSEC_LIST_CAP);
+                    if (!items) PARSEC_THROW(false, "malloc error for the argument list '%s'", arg);
+
+                    ParsecList list = {
+                        .items = items,
+                        .len = 0,
+                        .cap = PARSEC_LIST_CAP
+                    };
+
+                    char *s = strtok(val, ",");
+                    while (s != NULL) {
+                        if (list.len >= list.cap) {
+                            list.cap += PARSEC_LIST_CAP;
+                            list.items = realloc(list.items, list.cap * sizeof(char *));
+                            if (!list.items) PARSEC_THROW(false, "realloc error for the argument list '%s'", arg);
+                        }
+
+                        list.items[list.len++] = parsec_str_clone(s);
+                        s = strtok(NULL, ",");
+                    }
+
+                    *(ParsecList *)flag->ref = list;
                 }
                 break;
 
