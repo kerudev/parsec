@@ -1,9 +1,9 @@
-// hello-parsec/main.c - Simple program that greets the user.
+// 00-hello-parsec/main.c
 //
 // One of the most common examples for beginners is making a small program that
 // prints the user's name and age. This is useful to learn primitive types.
 //
-// This example  
+// This example teaches you how to use some simple flags.
 
 #include <stdio.h>
 

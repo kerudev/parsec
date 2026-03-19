@@ -1,10 +1,12 @@
-// password-generator/main.c - Simple password generator.
+// 00-password-generator/main.c
 //
-// This example uses 
+// This example teaches you how to use some simple flags, then uses the values
+// for something else than printing.
 
 #include <stdio.h>
 #include <stdlib.h>  // for srand(), rand()
 #include <time.h>    // for time(), clock()
+#include <string.h>  // for strlen()
 
 #define PARSEC_IMPLEMENTATION
 #include "../../parsec.h"
@@ -13,9 +15,8 @@ int get_random(int min, int max) {
     return rand() % (max - min + 1) + min;
 }
 
-void generate_password(char *password, int size) {
-    char allowed[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_";
-    int allowed_size = sizeof(allowed) - 1;
+void generate_password(char *allowed, char *password, int size) {
+    int allowed_size = strlen(allowed);
 
     srand(time(NULL) ^ clock());
 
@@ -28,17 +29,25 @@ void generate_password(char *password, int size) {
 
 int main(int argc, char *argv[]) {
     // Initialize parsec with a program name and description
-    parsec_init("rndpwd", "Generates a random password.");
+    parsec_init("password", "Generates a random password.");
 
     // Setup the flags
     int size;
+    char *allowed;
+
     parsec_int(&size, "-s", "--size", "Total characters to generate.");
+    parsec_str(&allowed, "-a", "--allowed", "Allowed characters to generate the password.");
 
     // Parse the flags
-    parsec_parse(argc, argv);
+    if (!parsec_parse(argc, argv)) return 1;
+
+    if (!size || !allowed) {
+        parsec_help();
+        exit(1);
+    }
 
     char password[size + 1];
-    generate_password(password, size);
+    generate_password(allowed, password, size);
 
     printf("Generating a %d character long password\n", size);
     printf("Your password is: %s\n", password);
