@@ -35,8 +35,14 @@ int main(int argc, char *argv[]) {
     int size;
     char *allowed;
 
-    parsec_int(&size, "-s", "--size", "Total characters to generate.");
-    parsec_str(&allowed, "-a", "--allowed", "Allowed characters to generate the password.");
+    parsec_int(
+        &size, "-s", "--size", 8,
+        "Total characters to generate."
+    );
+    parsec_str(
+        &allowed, "-a", "--allowed", "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_",
+        "Allowed characters to generate the password."
+    );
 
     // Parse the flags
     if (!parsec_parse(argc, argv)) return 1;
@@ -49,7 +55,7 @@ int main(int argc, char *argv[]) {
     char password[size + 1];
     generate_password(allowed, password, size);
 
-    printf("Generating a %d character long password\n", size);
+    printf("Generating a %d character long password (allowed: %s)\n", size, allowed);
     printf("Your password is: %s\n", password);
 
     return 0;

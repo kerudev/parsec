@@ -14,7 +14,10 @@ int main(int argc, char *argv[]) {
 
     // Setup the flags
     ParsecList list;
-    parsec_list(&list, "-i", "--items", "The items in your shopping list.");
+    parsec_list(
+        &list, "-i", "--items", (ParsecList){0},
+        "The items in your shopping list."
+    );
 
     // Parse the flags
     if (!parsec_parse(argc, argv)) return 1;

@@ -19,9 +19,9 @@ int main(int argc, char *argv[]) {
     int age;
     float cash;
 
-    parsec_str(&name, "-u", "--user", "User's name.");
-    parsec_int(&age, "-a", "--age", "User's age.");
-    parsec_float(&cash, "-c", "--cash", "User's cash.");
+    parsec_str(&name, "-u", "--user", "<blank>", "User's name.");
+    parsec_int(&age, "-a", "--age", 0, "User's age.");
+    parsec_float(&cash, "-c", "--cash", 0.0f, "User's cash.");
 
     // Parse the flags
     if (!parsec_parse(argc, argv)) return 1;

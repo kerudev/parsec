@@ -28,15 +28,15 @@ typedef struct {
 
 void parsec_da_free(ParsecList list);
 
-void parsec_bool(bool *ref, const char *s, const char *l, const char *desc);
+void parsec_bool(bool *ref, const char *s, const char *l, bool def, const char *desc);
 
-void parsec_int(int *ref, const char *s, const char *l, const char *desc);
+void parsec_int(int *ref, const char *s, const char *l, int def, const char *desc);
 
-void parsec_float(float *ref, const char *s, const char *l, const char *desc);
+void parsec_float(float *ref, const char *s, const char *l, float def, const char *desc);
 
-void parsec_str(char **ref, const char *s, const char *l, const char *desc);
+void parsec_str(char **ref, const char *s, const char *l, char *def, const char *desc);
 
-void parsec_list(ParsecList *ref, const char *s, const char *l, const char *desc);
+void parsec_list(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc);
 
 void parsec_help();
 
@@ -53,14 +53,6 @@ bool parsec_parse(int argc, char** argv);
 #include <stdio.h>      // for printf()
 #include <string.h>     // for strlen(), strcmp()
 #include <stdarg.h>     // for va_list
-
-typedef union {
-    bool _bool;
-    int _int;
-    float _float;
-    char *_str;
-    ParsecList *_list;
-} ParsecValue;
 
 typedef enum {
     PARSEC_BOOL     = 0,
@@ -84,7 +76,6 @@ typedef struct {
     void *ref;
 
     ParsecType type;
-    ParsecValue value;
 } ParsecFlag;
 
 typedef struct {
@@ -167,28 +158,29 @@ void parsec_da_free(ParsecList list) {
     free(list.items);
 }
 
-void parsec_bool(bool *ref, const char *s, const char *l, const char *desc) {
-    ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_BOOL);
-    flag->value._bool = false;
+void parsec_bool(bool *ref, const char *s, const char *l, bool def, const char *desc) {
+    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_BOOL);
+    *ref = def;
 }
 
-void parsec_int(int *ref, const char *s, const char *l, const char *desc) {
-    ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_INT);
-    flag->value._int = 0;
+void parsec_int(int *ref, const char *s, const char *l, int def, const char *desc) {
+    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_INT);
+    *ref = def;
 }
 
-void parsec_float(float *ref, const char *s, const char *l, const char *desc) {
-    ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_FLOAT);
-    flag->value._float = 0.0f;
+void parsec_float(float *ref, const char *s, const char *l, float def, const char *desc) {
+    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_FLOAT);
+    *ref = def;
 }
 
-void parsec_str(char **ref, const char *s, const char *l, const char *desc) {
-    ParsecFlag *flag = parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_STR);
-    flag->value._str = "";
+void parsec_str(char **ref, const char *s, const char *l, char *def, const char *desc) {
+    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_STR);
+    *ref = def;
 }
 
-void parsec_list(ParsecList *ref, const char *s, const char *l, const char *desc) {
+void parsec_list(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc) {
     parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_LIST);
+    *ref = def;
 }
 
 void parsec_help() {
