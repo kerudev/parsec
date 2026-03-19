@@ -32,10 +32,10 @@ int main(int argc, char *argv[]) {
     parsec_init("password", "Generates a random password.");
 
     // Setup the flags
-    int size;
+    size_t size;
     char *allowed;
 
-    parsec_int(
+    parsec_size(
         &size, "-s", "--size", 8,
         "Total characters to generate."
     );

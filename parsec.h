@@ -58,8 +58,8 @@ typedef enum {
     PARSEC_BOOL     = 0,
     PARSEC_INT      = 1,
     PARSEC_FLOAT    = 2,
-    // PARSEC_DOUBLE   = 3,
-    // PARSEC_SIZE     = 4,
+    PARSEC_DOUBLE   = 3,
+    PARSEC_SIZE     = 4,
     // PARSEC_CHAR     = 5,
     PARSEC_STR      = 6,
     // PARSEC_STRING   = 6,
@@ -173,6 +173,16 @@ void parsec_float(float *ref, const char *s, const char *l, float def, const cha
     *ref = def;
 }
 
+void parsec_double(float *ref, const char *s, const char *l, float def, const char *desc) {
+    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_DOUBLE);
+    *ref = def;
+}
+
+void parsec_size(float *ref, const char *s, const char *l, float def, const char *desc) {
+    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_SIZE);
+    *ref = def;
+}
+
 void parsec_str(char **ref, const char *s, const char *l, char *def, const char *desc) {
     parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_STR);
     *ref = def;
@@ -260,6 +270,26 @@ bool parsec_parse(int argc, char** argv) {
                     *(float *)flag->ref = strtof(val, &endptr);
 
                     if (*endptr != '\0') PARSEC_THROW(false, "error parsing '%s' to float: %s", arg, val);
+                }
+                break;
+
+                case PARSEC_DOUBLE: {
+                    char *val = parsec_shift(&argc, &argv);
+
+                    char *endptr;
+                    *(double *)flag->ref = strtod(val, &endptr);
+
+                    if (*endptr != '\0') PARSEC_THROW(false, "error parsing '%s' to double: %s", arg, val);
+                }
+                break;
+
+                case PARSEC_SIZE: {
+                    char *val = parsec_shift(&argc, &argv);
+
+                    char *endptr;
+                    *(size_t *)flag->ref = strtoull(val, &endptr, 10);
+
+                    if (*endptr != '\0') PARSEC_THROW(false, "error parsing '%s' to double: %s", arg, val);
                 }
                 break;
 
