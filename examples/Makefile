@@ -8,7 +8,7 @@ CFLAGS = -std=c99 \
 
 BUILD_DIR = build
 
-all: hello password list
+all: bools hello password list strings
 
 bools:
 	@mkdir -p $(BUILD_DIR)
@@ -25,6 +25,10 @@ password:
 list:
 	@mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) ./01-shopping-list/main.c -o ./$(BUILD_DIR)/parsec_$@
+
+strings:
+	@mkdir -p $(BUILD_DIR)
+	$(CC) $(CFLAGS) ./01-strings/main.c -o ./$(BUILD_DIR)/parsec_$@
 
 clean:
 	rm -rf $(BUILD_DIR)/*
