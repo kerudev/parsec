@@ -216,17 +216,34 @@ void parsec_help() {
     if (parsec.desc) printf(" - %s", parsec.desc);
     printf("\n\n");
 
+    size_t longest = 0;
+    for (size_t i = 0; i < parsec.flags_len; i++) {
+        ParsecFlag *flag = parsec.flags[i];
+
+        bool has_long = flag->long_name != NULL && flag->long_name[0] != '\0';
+        if (!has_long) continue;
+
+        size_t len = strlen(flag->long_name);
+        if (len > longest) longest = len;
+    }
+
     printf("Flags:\n");
 
     for (size_t i = 0; i < parsec.flags_len; i++) {
         ParsecFlag *flag = parsec.flags[i];
 
-        bool has_short = flag->short_name[0] != '\0';
-        bool has_long = flag->long_name[0] != '\0';
+        char *l = flag->long_name;
+        char *s = flag->short_name;
 
-        if (has_short && !has_long)      printf("%s       %s\n", flag->short_name, flag->desc);
-        else if (!has_short && has_long) printf("    %s   %s\n", flag->long_name, flag->desc);
-        else                             printf("%s, %s   %s\n", flag->short_name, flag->long_name, flag->desc);
+        bool has_short = s != NULL && s[0] != '\0';
+        bool has_long = l != NULL && l[0] != '\0';
+
+        int offset = has_long ? (int)(longest - strlen(l)) : (int)(longest + strlen(s));
+        offset += 2;
+
+        if (has_short && !has_long)      printf("%s%*c%s\n", s,    offset, ' ', flag->desc);
+        else if (!has_short && has_long) printf("    %s%*c%s\n", l,    offset, ' ', flag->desc);
+        else                             printf("%s, %s%*c%s\n", s, l, offset, ' ', flag->desc);
     }
 }
 
@@ -265,7 +282,11 @@ bool parsec_parse(int argc, char** argv) {
             char *s = flag->short_name;
             char *l = flag->long_name;
 
-            if (strcmp(arg, s) == 0 || strcmp(arg, l) == 0) {
+            bool is_short = s != NULL && s[0] != '\0' && strcmp(arg, s) == 0;
+            bool is_long = l != NULL && l[0] != '\0' && strcmp(arg, l) == 0;
+
+
+            if (is_short || is_long) {
                 switch (flag->type) {
                 case PARSEC_BOOL: {
                     *(bool *)flag->ref = !flag->def._bool;

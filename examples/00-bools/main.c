@@ -10,20 +10,20 @@
 
 int main(int argc, char *argv[]) {
     // Initialize parsec with a program name and description
-    parsec_init("bools", "Greets the user.");
+    parsec_init("bools", "Takes boolean flags and prints their values.");
 
     // Setup "regular" bool flags
     bool verbose;
     bool dry_run;
 
     parsec_bool(&verbose, "-v", "--verbose", false, "If provided, verbose printing is ON");
-    parsec_bool(&dry_run, "", "--dry-run", true, "If provided, the run will not save any data.");
+    parsec_bool(&dry_run, NULL, "--dry-run", false, "If provided, the run will not save any data.");
 
     // Setup "toggle" bool flags
     bool cov;
 
-    parsec_bool(&cov, "", "--cov", false, "If provided, coverage will be collected");
-    parsec_bool(&cov, "", "--no-cov", true, "Opposite of --cov");
+    parsec_bool(&cov, NULL, "--cov", false, "If provided, coverage will be collected");
+    parsec_bool(&cov, NULL, "--no-cov", true, "Opposite of --cov");
 
     // Parse the flags
     if (!parsec_parse(argc, argv)) return 1;
