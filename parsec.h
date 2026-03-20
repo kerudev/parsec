@@ -27,7 +27,14 @@ typedef struct {
     size_t cap;
 } ParsecList;
 
+typedef struct {
+    char *str;
+    size_t len;
+} ParsecString;
+
 void parsec_da_free(ParsecList list);
+
+void parsec_string_free(ParsecString s);
 
 void parsec_bool(bool *ref, const char *s, const char *l, bool def, const char *desc);
 
@@ -36,6 +43,8 @@ void parsec_int(int *ref, const char *s, const char *l, int def, const char *des
 void parsec_float(float *ref, const char *s, const char *l, float def, const char *desc);
 
 void parsec_str(char **ref, const char *s, const char *l, char *def, const char *desc);
+
+void parsec_string(ParsecString *ref, const char *s, const char *l, ParsecString def, const char *desc);
 
 void parsec_list(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc);
 
@@ -49,7 +58,7 @@ bool parsec_parse(int argc, char** argv);
 
 #ifdef PARSEC_IMPLEMENTATION
 
-#include <stdlib.h>     // for realloc(), atoi()
+#include <stdlib.h>     // for realloc(), atoi(), strtof(), strtod(), strtoull()
 #include <stdio.h>      // for printf()
 #include <string.h>     // for strlen(), strcmp()
 #include <stdarg.h>     // for va_list
@@ -62,7 +71,7 @@ typedef enum {
     PARSEC_SIZE     = 4,
     // PARSEC_CHAR     = 5,
     PARSEC_STR      = 6,
-    // PARSEC_STRING   = 6,
+    PARSEC_STRING   = 7,
     PARSEC_LIST     = 8,
     // PARSEC_MULTIPLE = 9,
     // PARSEC_ENUM     = 10,
@@ -75,6 +84,7 @@ typedef union {
     double _double;
     size_t _size;
     char *_str;
+    ParsecString _string;
     ParsecList _list;
 } ParsecValue;
 
@@ -205,6 +215,13 @@ void parsec_str(char **ref, const char *s, const char *l, char *def, const char 
     *ref = def;
 }
 
+void parsec_string(ParsecString *ref, const char *s, const char *l, ParsecString def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_STRING);
+
+    flag->def._string = def;
+    *ref = def;
+}
+
 void parsec_list(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_LIST);
     flag->def._list = def;
@@ -285,7 +302,6 @@ bool parsec_parse(int argc, char** argv) {
             bool is_short = s != NULL && s[0] != '\0' && strcmp(arg, s) == 0;
             bool is_long = l != NULL && l[0] != '\0' && strcmp(arg, l) == 0;
 
-
             if (is_short || is_long) {
                 switch (flag->type) {
                 case PARSEC_BOOL: {
@@ -332,6 +348,15 @@ bool parsec_parse(int argc, char** argv) {
                 case PARSEC_STR: {
                     char *val = parsec_shift(&argc, &argv);
                     *(char **)flag->ref = val;
+                }
+                break;
+
+                case PARSEC_STRING: {
+                    char *val = parsec_shift(&argc, &argv);
+                    *(ParsecString *)flag->ref = (ParsecString){
+                        .str = val,
+                        .len = strlen(val)
+                    };
                 }
                 break;
 
