@@ -15,6 +15,7 @@
 #define PARSEC_H_
 
 #include <stdbool.h>    // for bool
+#include <stddef.h>     // for size_t
 
 #ifndef PARSEC_LIST_CAP
 #define PARSEC_LIST_CAP 8
@@ -48,7 +49,6 @@ bool parsec_parse(int argc, char** argv);
 
 #ifdef PARSEC_IMPLEMENTATION
 
-#include <stddef.h>     // for size_t
 #include <stdlib.h>     // for realloc(), atoi()
 #include <stdio.h>      // for printf()
 #include <string.h>     // for strlen(), strcmp()
@@ -68,6 +68,16 @@ typedef enum {
     // PARSEC_ENUM     = 10,
 } ParsecType;
 
+typedef union {
+    bool _bool;
+    int _int;
+    float _float;
+    double _double;
+    size_t _size;
+    char *_str;
+    ParsecList _list;
+} ParsecValue;
+
 typedef struct {
     char *short_name;
     char *long_name;
@@ -76,6 +86,7 @@ typedef struct {
     void *ref;
 
     ParsecType type;
+    ParsecValue def;
 } ParsecFlag;
 
 typedef struct {
@@ -112,13 +123,13 @@ static void __parsec_err(const char *fmt, ...) {
 
 // Private declarations
 
-ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char *s, const char *l, const char *desc, ParsecType type);
+ParsecFlag *__parsec_add_flag(ParsecContext *ctx, void *ref, const char *s, const char *l, const char *desc, ParsecType type);
 
 char *parsec_str_clone(const char *s);
 
 // Private implementations
 
-ParsecFlag *parsec__add_flag(ParsecContext *ctx, void *ref, const char *s, const char *l, const char *desc, ParsecType type) {
+ParsecFlag *__parsec_add_flag(ParsecContext *ctx, void *ref, const char *s, const char *l, const char *desc, ParsecType type) {
     if (ctx->flags_len == ctx->flags_cap) {
         if (ctx->flags_cap == 0) ctx->flags_cap = 4;
         ctx->flags_cap *= 2;
@@ -159,37 +170,44 @@ void parsec_da_free(ParsecList list) {
 }
 
 void parsec_bool(bool *ref, const char *s, const char *l, bool def, const char *desc) {
-    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_BOOL);
+    ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_BOOL);
+    flag->def._bool = def;
     *ref = def;
 }
 
 void parsec_int(int *ref, const char *s, const char *l, int def, const char *desc) {
-    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_INT);
+    ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_INT);
+    flag->def._int = def;
     *ref = def;
 }
 
 void parsec_float(float *ref, const char *s, const char *l, float def, const char *desc) {
-    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_FLOAT);
+    ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_FLOAT);
+    flag->def._float = def;
     *ref = def;
 }
 
 void parsec_double(float *ref, const char *s, const char *l, float def, const char *desc) {
-    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_DOUBLE);
+    ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_DOUBLE);
+    flag->def._double = def;
     *ref = def;
 }
 
 void parsec_size(float *ref, const char *s, const char *l, float def, const char *desc) {
-    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_SIZE);
+    ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_SIZE);
+    flag->def._size = def;
     *ref = def;
 }
 
 void parsec_str(char **ref, const char *s, const char *l, char *def, const char *desc) {
-    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_STR);
+    ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_STR);
+    flag->def._str = def;
     *ref = def;
 }
 
 void parsec_list(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc) {
-    parsec__add_flag(&parsec, ref, s, l, desc, PARSEC_LIST);
+    ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_LIST);
+    flag->def._list = def;
     *ref = def;
 }
 
@@ -203,15 +221,12 @@ void parsec_help() {
     for (size_t i = 0; i < parsec.flags_len; i++) {
         ParsecFlag *flag = parsec.flags[i];
 
-        if (strlen(flag->long_name) == 0) {
-            printf("%s        %s\n", flag->short_name, flag->desc);
-        }
-        else if (strlen(flag->short_name) == 0) {
-            printf("    %s   %s\n", flag->long_name, flag->desc);
-        }
-        else {
-            printf("%s, %s   %s\n", flag->short_name, flag->long_name, flag->desc);
-        }
+        bool has_short = flag->short_name[0] != '\0';
+        bool has_long = flag->long_name[0] != '\0';
+
+        if (has_short && !has_long)      printf("%s       %s\n", flag->short_name, flag->desc);
+        else if (!has_short && has_long) printf("    %s   %s\n", flag->long_name, flag->desc);
+        else                             printf("%s, %s   %s\n", flag->short_name, flag->long_name, flag->desc);
     }
 }
 
@@ -253,7 +268,7 @@ bool parsec_parse(int argc, char** argv) {
             if (strcmp(arg, s) == 0 || strcmp(arg, l) == 0) {
                 switch (flag->type) {
                 case PARSEC_BOOL: {
-                    *(bool *)flag->ref = true;
+                    *(bool *)flag->ref = !flag->def._bool;
                 }
                 break;
 
