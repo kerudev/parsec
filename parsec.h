@@ -32,7 +32,9 @@ typedef struct {
     size_t len;
 } ParsecString;
 
-void parsec_da_free(ParsecList list);
+ParsecList parsec_str_to_list(const char *s, const char *sep);
+
+void parsec_list_free(ParsecList list);
 
 void parsec_string_free(ParsecString s);
 
@@ -41,6 +43,8 @@ void parsec_bool(bool *ref, const char *s, const char *l, bool def, const char *
 void parsec_int(int *ref, const char *s, const char *l, int def, const char *desc);
 
 void parsec_float(float *ref, const char *s, const char *l, float def, const char *desc);
+
+void parsec_char(char *ref, const char *s, const char *l, char def, const char *desc);
 
 void parsec_str(char **ref, const char *s, const char *l, char *def, const char *desc);
 
@@ -69,7 +73,7 @@ typedef enum {
     PARSEC_FLOAT    = 2,
     PARSEC_DOUBLE   = 3,
     PARSEC_SIZE     = 4,
-    // PARSEC_CHAR     = 5,
+    PARSEC_CHAR     = 5,
     PARSEC_STR      = 6,
     PARSEC_STRING   = 7,
     PARSEC_LIST     = 8,
@@ -83,6 +87,7 @@ typedef union {
     float _float;
     double _double;
     size_t _size;
+    char _char;
     char *_str;
     ParsecString _string;
     ParsecList _list;
@@ -174,7 +179,36 @@ char *parsec_str_clone(const char *s) {
 
 // Public
 
-void parsec_da_free(ParsecList list) {
+ParsecList parsec_str_to_list(const char *s, const char *sep) {
+    char **items = malloc(sizeof(char *) * PARSEC_LIST_CAP);
+    if (!items) return (ParsecList){0};
+
+    ParsecList list = {
+        .items = items,
+        .len = 0,
+        .cap = PARSEC_LIST_CAP
+    };
+
+    char *tmp = parsec_str_clone(s);
+
+    char *token = strtok(tmp, sep);
+    while (token != NULL) {
+        if (list.len >= list.cap) {
+            list.cap += PARSEC_LIST_CAP;
+            list.items = realloc(list.items, list.cap * sizeof(char *));
+            if (!list.items) return (ParsecList){0};
+        }
+
+        list.items[list.len++] = parsec_str_clone(token);
+        token = strtok(NULL, sep);
+    }
+
+    free(tmp);
+
+    return list;
+}
+
+void parsec_list_free(ParsecList list) {
     for (size_t i = 0; i < list.len; i++) free(list.items[i]);
     free(list.items);
 }
@@ -203,9 +237,15 @@ void parsec_double(float *ref, const char *s, const char *l, float def, const ch
     *ref = def;
 }
 
-void parsec_size(float *ref, const char *s, const char *l, float def, const char *desc) {
+void parsec_size(size_t *ref, const char *s, const char *l, float def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_SIZE);
     flag->def._size = def;
+    *ref = def;
+}
+
+void parsec_char(char *ref, const char *s, const char *l, char def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_CHAR);
+    flag->def._char = def;
     *ref = def;
 }
 
@@ -345,6 +385,12 @@ bool parsec_parse(int argc, char** argv) {
                 }
                 break;
 
+                case PARSEC_CHAR: {
+                    char *val = parsec_shift(&argc, &argv);
+                    *(char *)flag->ref = val[0];
+                }
+                break;
+
                 case PARSEC_STR: {
                     char *val = parsec_shift(&argc, &argv);
                     *(char **)flag->ref = val;
@@ -363,26 +409,8 @@ bool parsec_parse(int argc, char** argv) {
                 case PARSEC_LIST: {
                     char *val = parsec_shift(&argc, &argv);
 
-                    char **items = malloc(sizeof(char *) * PARSEC_LIST_CAP);
-                    if (!items) PARSEC_THROW(false, "malloc error for the argument list '%s'", arg);
-
-                    ParsecList list = {
-                        .items = items,
-                        .len = 0,
-                        .cap = PARSEC_LIST_CAP
-                    };
-
-                    char *s = strtok(val, ",");
-                    while (s != NULL) {
-                        if (list.len >= list.cap) {
-                            list.cap += PARSEC_LIST_CAP;
-                            list.items = realloc(list.items, list.cap * sizeof(char *));
-                            if (!list.items) PARSEC_THROW(false, "realloc error for the argument list '%s'", arg);
-                        }
-
-                        list.items[list.len++] = parsec_str_clone(s);
-                        s = strtok(NULL, ",");
-                    }
+                    ParsecList list = parsec_str_to_list(val, ",");
+                    if (!list.items) PARSEC_THROW(false, "error converting to ParsecList '%s'", arg);
 
                     *(ParsecList *)flag->ref = list;
                 }
