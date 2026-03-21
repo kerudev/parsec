@@ -1,4 +1,4 @@
-// 01-lists/main.c
+// 03-lists/main.c
 //
 // This example teaches you how to use "ParsecList", which is a dynamic array
 // that contains char* as items.
@@ -14,7 +14,7 @@
 #define PARSEC_IMPLEMENTATION
 #include "../../parsec.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     // Initialize parsec with a program name and description
     parsec_init("lists", "Takes list-like arguments.");
 

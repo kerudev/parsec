@@ -1,4 +1,4 @@
-// 00-bools/main.c
+// 01-bools/main.c
 //
 // This example teaches you how to use the bool flags, and also how to simulate
 // toggle variants.
@@ -12,7 +12,7 @@
 #define PARSEC_IMPLEMENTATION
 #include "../../parsec.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     // Initialize parsec with a program name and description
     parsec_init("bools", "Takes boolean flags and prints their values.");
 

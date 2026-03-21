@@ -2,4 +2,5 @@
 .vscode
 
 # compilation artifacts
+nob
 **/build/

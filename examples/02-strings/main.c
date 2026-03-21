@@ -1,4 +1,4 @@
-// 01-strings/main.c
+// 02-strings/main.c
 //
 // This example teaches you how to use "ParsecString", which is a basic string
 // view implementation.
@@ -19,7 +19,7 @@
 #define PARSEC_IMPLEMENTATION
 #include "../../parsec.h"
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     // Initialize parsec with a program name and description
     parsec_init("strings", "Takes string-like flags and prints their values.");
 

@@ -1,4 +1,4 @@
-// 00-password-generator/main.c
+// 10-password-generator/main.c
 //
 // This example teaches you how to use some simple flags, then uses the values
 // for something else than printing.
@@ -31,7 +31,7 @@ void generate_password(char *allowed, char *password, int size) {
     password[size] = '\0';
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     // Initialize parsec with a program name and description
     parsec_init("password", "Generates a random password.");
 
