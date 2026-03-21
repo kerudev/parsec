@@ -1,7 +1,7 @@
-// 01-string/main.c
+// 01-strings/main.c
 //
-// This example teaches you how to use ParsecString, which is an implementation
-// of a basic string view.
+// This example teaches you how to use "ParsecString", which is a basic string
+// view implementation.
 //
 // If you are not familiar with string views, they store a char* and its length.
 // This allows you to manipulate a string by its length, not by where `\0` is.
@@ -9,6 +9,9 @@
 // Benefits of this approach:
 // - You can modify the data without allocations.
 // - The original string stays the same (no data destruction).
+//
+// Usage:
+// - ./build/parsec_strings -s foobarbaz -v foobarbaz
 
 #include <stdio.h>
 #include <string.h>
@@ -68,7 +71,7 @@ int main(int argc, char *argv[]) {
     view.len -= 2;          // chop right
 
     printf("Printing the whole string (after chopping)\n");
-    printf("- char*       : %s (length = %zu)\n", s, strlen(s));
+    printf("- char*       : %s   (length = %zu)\n", s, strlen(s));
     printf("- ParsecString: %s (length = %zu)\n", view.str, view.len);
 
     // Noticed how ParsecString printed 6 characters instead of 4? This is

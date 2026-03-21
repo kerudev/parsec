@@ -4,6 +4,10 @@
 // prints the user's name and age. This is useful to learn primitive types.
 //
 // This example teaches you how to use some simple flags.
+//
+// Usage:
+// - ./build/parsec_hello
+// - ./build/parsec_hello -u parsec -a 42 -c 69.420
 
 #include <stdio.h>
 
@@ -19,9 +23,9 @@ int main(int argc, char *argv[]) {
     int age;
     float cash;
 
-    parsec_str(&name, "-u", "--user", "<blank>", "User's name.");
-    parsec_int(&age, "-a", "--age", 0, "User's age.");
-    parsec_float(&cash, "-c", "--cash", 0.0f, "User's cash.");
+    parsec_str(&name,   "-u", "--user", "<blank>", "User's name.");
+    parsec_int(&age,    "-a", "--age",          0, "User's age.");
+    parsec_float(&cash, "-c", "--cash",      0.0f, "User's cash.");
 
     // Parse the flags
     if (!parsec_parse(argc, argv)) return 1;

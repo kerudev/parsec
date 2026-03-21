@@ -2,6 +2,10 @@
 //
 // This example teaches you how to use the bool flags, and also how to simulate
 // toggle variants.
+//
+// Usage:
+// - ./build/parsec_bools
+// - ./build/parsec_bools -v --dry-run --no-cov
 
 #include <stdio.h>
 
@@ -22,7 +26,7 @@ int main(int argc, char *argv[]) {
     // Setup "toggle" bool flags
     bool cov;
 
-    parsec_bool(&cov, NULL, "--cov", false, "If provided, coverage will be collected");
+    parsec_bool(&cov, NULL, "--cov",   false, "If provided, coverage will be collected");
     parsec_bool(&cov, NULL, "--no-cov", true, "Opposite of --cov");
 
     // Parse the flags

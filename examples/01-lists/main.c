@@ -4,6 +4,10 @@
 // that contains char* as items.
 //
 // You can also convert a string to ParsecList.
+//
+// Usage:
+// - ./build/parsec_lists -s foo,bar,baz,qux -c , -l foo,bar,baz,qux
+// - ./build/parsec_lists -s foo,bar,baz,qux -l foo,bar,baz,qux
 
 #include <stdio.h>
 
@@ -40,12 +44,12 @@ int main(int argc, char *argv[]) {
     char delimiter[2] = {sep, '\0'};
     ParsecList parsed = parsec_str_to_list(str, delimiter);
 
-    if (parsed.len < 4) {
+    if (parsed.len < 3) {
         printf("-s/--str must be at least 4 items long (comma separated by default)\n");
         exit(1);
     }
 
-    if (list.len < 4) {
+    if (list.len < 3) {
         printf("-l/--list must be at least 4 items long (comma separated by default)\n");
         exit(1);
     }

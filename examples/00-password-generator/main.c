@@ -2,6 +2,10 @@
 //
 // This example teaches you how to use some simple flags, then uses the values
 // for something else than printing.
+//
+// Usage:
+// - ./build/parsec_password
+// - ./build/parsec_password -s 8 -a abcdefghijklmnopqrstuvwxyz
 
 #include <stdio.h>
 #include <stdlib.h>  // for srand(), rand()
@@ -55,7 +59,7 @@ int main(int argc, char *argv[]) {
     char password[size + 1];
     generate_password(allowed, password, size);
 
-    printf("Generating a %d character long password (allowed: %s)\n", size, allowed);
+    printf("Generating a %zu character long password (allowed: %s)\n", size, allowed);
     printf("Your password is: %s\n", password);
 
     return 0;
