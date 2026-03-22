@@ -10,9 +10,9 @@ A simple argument parser in C.
 ## Installation
 
 ```sh
-wget https://github.com/kerudev/parsec/parsec.h
+wget https://raw.githubusercontent.com/kerudev/parsec/refs/heads/master/parsec.h
 ```
 
 ## How to use
 
-You can find simple examples in the `examples` directory.
+You can find simple examples in the [`examples`](./examples) directory.
