@@ -9,7 +9,7 @@
 // - ./build/parsec_hello
 // - ./build/parsec_hello -u parsec -a 42 -c 69.420
 
-#include <stdio.h>
+#include <stdio.h>      // for printf()
 
 #define PARSEC_IMPLEMENTATION
 #include "../../parsec.h"

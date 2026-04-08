@@ -8,7 +8,7 @@
 // - ./build/parsec_csv -p stock.csv -t name,qty,price -l potato,2,3 -l tomato,3,1 -l banana,5,2
 //   ./build/parsec_csv -p stock.csv -l carrot,1,1
 
-#include <stdio.h>
+#include <stdio.h>      // for fopen(), fwrite(), fputc(), fclose(), fprintf(), printf()
 #include <sys/stat.h>   // for stat, stat()
 #include <string.h>     // for strlen(), strcmp()
 

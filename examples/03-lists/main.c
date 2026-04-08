@@ -9,7 +9,7 @@
 // - ./build/parsec_lists -s foo,bar,baz,qux -c , -l foo,bar,baz,qux
 // - ./build/parsec_lists -s foo,bar,baz,qux -l foo,bar,baz,qux
 
-#include <stdio.h>
+#include <stdio.h>      // for printf(), fprintf()
 
 #define PARSEC_IMPLEMENTATION
 #include "../../parsec.h"
@@ -45,12 +45,12 @@ int main(int argc, char **argv) {
     ParsecList parsed = parsec_str_to_list(str, delimiter);
 
     if (parsed.len < 3) {
-        fprintf(stderr, "-s/--str must be at least 4 items long (comma separated by default)\n");
+        fprintf(stderr, "-s/--str: must be at least 4 items long (comma separated by default)\n");
         exit(1);
     }
 
     if (list.len < 3) {
-        fprintf(stderr, "-l/--list must be at least 4 items long (comma separated by default)\n");
+        fprintf(stderr, "-l/--list: must be at least 4 items long (comma separated by default)\n");
         exit(1);
     }
 

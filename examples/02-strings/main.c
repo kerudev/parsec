@@ -13,8 +13,8 @@
 // Usage:
 // - ./build/parsec_strings -s foobarbaz -v foobarbaz
 
-#include <stdio.h>
-#include <string.h>
+#include <stdio.h>      // for printf(), fprintf()
+#include <string.h>     // for strlen()
 
 #define PARSEC_IMPLEMENTATION
 #include "../../parsec.h"
@@ -46,12 +46,12 @@ int main(int argc, char **argv) {
     }
 
     if (strlen(str) < 8) {
-        fprintf(stderr, "-s/--str must be at least 8 chars long\n");
+        fprintf(stderr, "-s/--str: must be at least 8 chars long\n");
         exit(1);
     }
 
     if (view.len < 8) {
-        fprintf(stderr, "-v/--view must be at least 8 chars long\n");
+        fprintf(stderr, "-v/--view: must be at least 8 chars long\n");
         exit(1);
     }
 

@@ -7,10 +7,10 @@
 // - ./build/parsec_password
 // - ./build/parsec_password -s 8 -a abcdefghijklmnopqrstuvwxyz
 
-#include <stdio.h>
-#include <stdlib.h>  // for srand(), rand()
-#include <time.h>    // for time(), clock()
-#include <string.h>  // for strlen()
+#include <stdio.h>      // for printf()
+#include <stdlib.h>     // for srand(), rand()
+#include <time.h>       // for time(), clock()
+#include <string.h>     // for strlen()
 
 #define PARSEC_IMPLEMENTATION
 #include "../../parsec.h"

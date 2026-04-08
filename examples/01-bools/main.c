@@ -7,7 +7,7 @@
 // - ./build/parsec_bools
 // - ./build/parsec_bools -v --dry-run --no-cov
 
-#include <stdio.h>
+#include <stdio.h>      // for printf()
 
 #define PARSEC_IMPLEMENTATION
 #include "../../parsec.h"
