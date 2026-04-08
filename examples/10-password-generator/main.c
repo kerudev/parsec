@@ -22,6 +22,7 @@ int get_random(int min, int max) {
 void generate_password(char *allowed, char *password, int size) {
     int allowed_size = strlen(allowed);
 
+    // The seed for random numbers is based on the GNU time and your CPU time
     srand(time(NULL) ^ clock());
 
     for (int i = 0; i < size; i++) {

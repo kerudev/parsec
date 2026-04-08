@@ -46,12 +46,12 @@ int main(int argc, char **argv) {
     }
 
     if (strlen(str) < 8) {
-        printf("-s/--str must be at least 8 chars long\n");
+        fprintf(stderr, "-s/--str must be at least 8 chars long\n");
         exit(1);
     }
 
     if (view.len < 8) {
-        printf("-v/--view must be at least 8 chars long\n");
+        fprintf(stderr, "-v/--view must be at least 8 chars long\n");
         exit(1);
     }
 
