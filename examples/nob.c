@@ -24,11 +24,12 @@ int main(int argc, char **argv) {
 
     if (!nob_mkdir_if_not_exists("build")) return 1;
 
-    RECIPE("00-hello-parsec",          "hello");
-    RECIPE("01-bools",                 "bools");
-    RECIPE("02-strings",               "strings");
-    RECIPE("03-lists",                 "lists");
-    RECIPE("10-password-generator",    "password");
+    RECIPE("00-hello-parsec",           "hello");
+    RECIPE("01-bools",                  "bools");
+    RECIPE("02-strings",                "strings");
+    RECIPE("03-lists",                  "lists");
+    RECIPE("10-password-generator",     "password");
+    RECIPE("11-csv",                    "csv");
 
     return 0;
 }
