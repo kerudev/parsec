@@ -34,6 +34,8 @@ typedef struct {
 
 ParsecList parsec_str_to_list(const char *s, const char *sep);
 
+bool parsec_list_push(ParsecList *list, char *val);
+
 void parsec_list_free(ParsecList list);
 
 void parsec_string_free(ParsecString s);
@@ -51,6 +53,8 @@ void parsec_str(char **ref, const char *s, const char *l, char *def, const char 
 void parsec_string(ParsecString *ref, const char *s, const char *l, ParsecString def, const char *desc);
 
 void parsec_list(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc);
+
+void parsec_many(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc);
 
 void parsec_help();
 
@@ -77,7 +81,7 @@ typedef enum {
     PARSEC_STR      = 6,
     PARSEC_STRING   = 7,
     PARSEC_LIST     = 8,
-    // PARSEC_MULTIPLE = 9,
+    PARSEC_MANY     = 9,
     // PARSEC_ENUM     = 10,
 } ParsecType;
 
@@ -208,6 +212,18 @@ ParsecList parsec_str_to_list(const char *s, const char *sep) {
     return list;
 }
 
+bool parsec_list_push(ParsecList *list, char *val) {
+    if (list->len >= list->cap) {
+        list->cap += PARSEC_LIST_CAP;
+        list->items = realloc(list->items, list->cap * sizeof(char *));
+        if (!list->items) return false;
+    }
+
+    list->items[list->len++] = parsec_str_clone(val);
+
+    return true;
+}
+
 void parsec_list_free(ParsecList list) {
     for (size_t i = 0; i < list.len; i++) free(list.items[i]);
     free(list.items);
@@ -268,6 +284,12 @@ void parsec_list(ParsecList *ref, const char *s, const char *l, ParsecList def, 
     *ref = def;
 }
 
+void parsec_many(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_MANY);
+    flag->def._list = def;
+    *ref = def;
+}
+
 void parsec_help() {
     printf("%s", parsec.name);
     if (parsec.desc) printf(" - %s", parsec.desc);
@@ -298,7 +320,7 @@ void parsec_help() {
         int offset = has_long ? (int)(longest - strlen(l)) : (int)(longest + strlen(s));
         offset += 2;
 
-        if (has_short && !has_long)      printf("%s%*c%s\n", s,    offset, ' ', flag->desc);
+        if      (has_short && !has_long) printf("%s%*c%s\n",     s,    offset, ' ', flag->desc);
         else if (!has_short && has_long) printf("    %s%*c%s\n", l,    offset, ' ', flag->desc);
         else                             printf("%s, %s%*c%s\n", s, l, offset, ' ', flag->desc);
     }
@@ -413,6 +435,12 @@ bool parsec_parse(int argc, char** argv) {
                     if (!list.items) PARSEC_THROW(false, "error converting to ParsecList '%s'", arg);
 
                     *(ParsecList *)flag->ref = list;
+                }
+                break;
+
+                case PARSEC_MANY: {
+                    char *val = parsec_shift(&argc, &argv);
+                    parsec_list_push((ParsecList *)flag->ref, val);
                 }
                 break;
 
