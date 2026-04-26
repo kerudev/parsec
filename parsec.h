@@ -21,45 +21,112 @@
 #define PARSEC_LIST_CAP 8
 #endif // PARSEC_LIST_CAP
 
+/** Parsec's dynamic array of strings. */
 typedef struct {
+    /** Elements of the list. */
     char **items;
+    /** Number of elements. */
     size_t len;
+    /** Max elements the list can hold. */
     size_t cap;
 } ParsecList;
 
+/** Parsec's string view. */
 typedef struct {
+    /** The original string. */
     char *str;
+    /** Length of the view. */
     size_t len;
 } ParsecString;
 
+/**
+ * Splits `s` using `sep`.
+ *
+ * Returns a `ParsecList` that contains the splitted elements.
+ * The list may be empty if memory allocation fails.
+ */
 ParsecList parsec_str_to_list(const char *s, const char *sep);
 
+/**
+ * Pushes `val` to `list`.
+ *
+ * Returns `true` if the element was pushed, `false` otherwise.
+ */
 bool parsec_list_push(ParsecList *list, char *val);
 
+/**
+ * Frees a `ParsecList`.
+ */
 void parsec_list_free(ParsecList list);
 
-void parsec_string_free(ParsecString s);
+/**
+ * Frees a `ParsecString`.
+ */
+// void parsec_string_free(ParsecString s);
 
+/**
+ * Adds a flag of type `PARSEC_BOOL` to the `parsec` context.
+ */
 void parsec_bool(bool *ref, const char *s, const char *l, bool def, const char *desc);
 
+/**
+ * Adds a flag of type `PARSEC_INT` to the `parsec` context.
+ */
 void parsec_int(int *ref, const char *s, const char *l, int def, const char *desc);
 
+/**
+ * Adds a flag of type `PARSEC_FLOAT` to the `parsec` context.
+ */
 void parsec_float(float *ref, const char *s, const char *l, float def, const char *desc);
 
+/**
+ * Adds a flag of type `PARSEC_DOUBLE` to the `parsec` context.
+ */
+void parsec_double(float *ref, const char *s, const char *l, float def, const char *desc);
+
+/**
+ * Adds a flag of type `PARSEC_SIZE` to the `parsec` context.
+ */
+void parsec_size(size_t *ref, const char *s, const char *l, float def, const char *desc);
+
+/**
+ * Adds a flag of type `PARSEC_CHAR` to the `parsec` context.
+ */
 void parsec_char(char *ref, const char *s, const char *l, char def, const char *desc);
 
+/**
+ * Adds a flag of type `PARSEC_STR` to the `parsec` context.
+ */
 void parsec_str(char **ref, const char *s, const char *l, char *def, const char *desc);
 
+/**
+ * Adds a flag of type `PARSEC_STRING` to the `parsec` context.
+ */
 void parsec_string(ParsecString *ref, const char *s, const char *l, ParsecString def, const char *desc);
 
+/**
+ * Adds a flag of type `PARSEC_LIST` to the `parsec` context.
+ */
 void parsec_list(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc);
 
+/**
+ * Adds a flag of type `PARSEC_MANY` to the `parsec` context.
+ */
 void parsec_many(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc);
 
+/**
+ * Prints the help message.
+ */
 void parsec_help();
 
+/**
+ * Set's the `name` and `description` of your program.
+ */
 void parsec_init(const char *name, const char *desc);
 
+/**
+ * Consumes `argc` and `argv` and 
+ */
 bool parsec_parse(int argc, char** argv);
 
 #endif // PARSEC_H_
@@ -71,6 +138,7 @@ bool parsec_parse(int argc, char** argv);
 #include <string.h>     // for strlen(), strcmp()
 #include <stdarg.h>     // for va_list
 
+/** Types of flags that are supported. */
 typedef enum {
     PARSEC_BOOL     = 0,
     PARSEC_INT      = 1,
@@ -97,14 +165,21 @@ typedef union {
     ParsecList _list;
 } ParsecValue;
 
+/** Representation of a flag. */
 typedef struct {
+    /** Short name. */
     char *short_name;
+    /** Long name. */
     char *long_name;
 
+    /** Short text that describes the flag's use. */
     char *desc;
+    /** Reference to the value in memory. */
     void *ref;
 
+    /** Type that defines how the flag will be parsed. */
     ParsecType type;
+    /** Default value. */
     ParsecValue def;
 } ParsecFlag;
 
@@ -273,7 +348,6 @@ void parsec_str(char **ref, const char *s, const char *l, char *def, const char 
 
 void parsec_string(ParsecString *ref, const char *s, const char *l, ParsecString def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_STRING);
-
     flag->def._string = def;
     *ref = def;
 }
