@@ -70,9 +70,21 @@ void parsec_list_free(ParsecList list);
 void parsec_bool(bool *ref, const char *s, const char *l, bool def, const char *desc);
 
 /**
+ * Adds a flag of type `PARSEC_BOOL` to the `parsec` context.
+ * Returns a reference to the flag's value.
+ */
+bool *parsec_bool_ref(const char *s, const char *l, bool def, const char *desc);
+
+/**
  * Adds a flag of type `PARSEC_INT` to the `parsec` context.
  */
 void parsec_int(int *ref, const char *s, const char *l, int def, const char *desc);
+
+/**
+ * Adds a flag of type `PARSEC_INT` to the `parsec` context.
+ * Returns a reference to the flag's value.
+ */
+int *parsec_int_ref(const char *s, const char *l, int def, const char *desc);
 
 /**
  * Adds a flag of type `PARSEC_FLOAT` to the `parsec` context.
@@ -80,9 +92,21 @@ void parsec_int(int *ref, const char *s, const char *l, int def, const char *des
 void parsec_float(float *ref, const char *s, const char *l, float def, const char *desc);
 
 /**
+ * Adds a flag of type `PARSEC_FLOAT` to the `parsec` context.
+ * Returns a reference to the flag's value.
+ */
+float *parsec_float_ref(const char *s, const char *l, float def, const char *desc);
+
+/**
  * Adds a flag of type `PARSEC_DOUBLE` to the `parsec` context.
  */
 void parsec_double(double *ref, const char *s, const char *l, double def, const char *desc);
+
+/**
+ * Adds a flag of type `PARSEC_DOUBLE` to the `parsec` context.
+ * Returns a reference to the flag's value.
+ */
+double *parsec_double_ref(const char *s, const char *l, double def, const char *desc);
 
 /**
  * Adds a flag of type `PARSEC_SIZE` to the `parsec` context.
@@ -90,9 +114,21 @@ void parsec_double(double *ref, const char *s, const char *l, double def, const 
 void parsec_size(size_t *ref, const char *s, const char *l, size_t def, const char *desc);
 
 /**
+ * Adds a flag of type `PARSEC_SIZE` to the `parsec` context.
+ * Returns a reference to the flag's value.
+ */
+size_t *parsec_size_ref(const char *s, const char *l, float def, const char *desc);
+
+/**
  * Adds a flag of type `PARSEC_CHAR` to the `parsec` context.
  */
 void parsec_char(char *ref, const char *s, const char *l, char def, const char *desc);
+
+/**
+ * Adds a flag of type `PARSEC_CHAR` to the `parsec` context.
+ * Returns a reference to the flag's value.
+ */
+char *parsec_char_ref(const char *s, const char *l, char def, const char *desc);
 
 /**
  * Adds a flag of type `PARSEC_STR` to the `parsec` context.
@@ -100,9 +136,21 @@ void parsec_char(char *ref, const char *s, const char *l, char def, const char *
 void parsec_str(char **ref, const char *s, const char *l, char *def, const char *desc);
 
 /**
+ * Adds a flag of type `PARSEC_STR` to the `parsec` context.
+ * Returns a reference to the flag's value.
+ */
+char **parsec_str_ref( const char *s, const char *l, char *def, const char *desc);
+
+/**
  * Adds a flag of type `PARSEC_STRING` to the `parsec` context.
  */
 void parsec_string(ParsecString *ref, const char *s, const char *l, ParsecString def, const char *desc);
+
+/**
+ * Adds a flag of type `PARSEC_STRING` to the `parsec` context.
+ * Returns a reference to the flag's value.
+ */
+ParsecString *parsec_string_ref(const char *s, const char *l, ParsecString def, const char *desc);
 
 /**
  * Adds a flag of type `PARSEC_LIST` to the `parsec` context.
@@ -110,9 +158,21 @@ void parsec_string(ParsecString *ref, const char *s, const char *l, ParsecString
 void parsec_list(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc);
 
 /**
+ * Adds a flag of type `PARSEC_LIST` to the `parsec` context.
+ * Returns a reference to the flag's value.
+ */
+ParsecList *parsec_list_ref(const char *s, const char *l, ParsecList def, const char *desc);
+
+/**
  * Adds a flag of type `PARSEC_MANY` to the `parsec` context.
  */
 void parsec_many(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc);
+
+/**
+ * Adds a flag of type `PARSEC_MANY` to the `parsec` context.
+ * Returns a reference to the flag's value.
+ */
+ParsecList *parsec_many_ref(const char *s, const char *l, ParsecList def, const char *desc);
 
 /**
  * Prints the help message.
@@ -171,16 +231,18 @@ typedef struct {
     char *short_name;
     /** Long name. */
     char *long_name;
-
     /** Short text that describes the flag's use. */
     char *desc;
-    /** Reference to the value in memory. */
-    void *ref;
 
     /** Type that defines how the flag will be parsed. */
     ParsecType type;
     /** Default value. */
     ParsecValue def;
+
+    /** Reference to the value in memory (`NULL` in the `_ref` interface). */
+    void *ref;
+    /** Value of the flag (used by the `_ref` interface). */
+    ParsecValue val;
 } ParsecFlag;
 
 typedef struct {
@@ -219,6 +281,8 @@ static void __parsec_err(const char *fmt, ...) {
 
 ParsecFlag *__parsec_add_flag(ParsecContext *ctx, void *ref, const char *s, const char *l, const char *desc, ParsecType type);
 
+void *__parsec_flag_ref(ParsecFlag *flag);
+
 char *parsec_str_clone(const char *s);
 
 // Private implementations
@@ -244,6 +308,11 @@ ParsecFlag *__parsec_add_flag(ParsecContext *ctx, void *ref, const char *s, cons
     ctx->flags[ctx->flags_len++] = flag;
 
     return flag;
+}
+
+void *__parsec_flag_ref(ParsecFlag *flag) {
+    if (flag->ref) return flag->ref;
+    return &flag->val;
 }
 
 char *parsec_str_clone(const char *s) {
@@ -307,61 +376,141 @@ void parsec_list_free(ParsecList list) {
 void parsec_bool(bool *ref, const char *s, const char *l, bool def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_BOOL);
     flag->def._bool = def;
+    flag->val._bool = def;
     *ref = def;
+}
+
+bool *parsec_bool_ref(const char *s, const char *l, bool def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, NULL, s, l, desc, PARSEC_BOOL);
+    flag->def._bool = def;
+    flag->val._bool = def;
+    return &flag->val._bool;
 }
 
 void parsec_int(int *ref, const char *s, const char *l, int def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_INT);
     flag->def._int = def;
+    flag->val._int = def;
     *ref = def;
+}
+
+int *parsec_int_ref(const char *s, const char *l, int def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, NULL, s, l, desc, PARSEC_INT);
+    flag->def._int = def;
+    flag->val._int = def;
+    return &flag->val._int;
 }
 
 void parsec_float(float *ref, const char *s, const char *l, float def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_FLOAT);
     flag->def._float = def;
+    flag->val._float = def;
     *ref = def;
+}
+
+float *parsec_float_ref(const char *s, const char *l, float def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, NULL, s, l, desc, PARSEC_FLOAT);
+    flag->def._float = def;
+    flag->val._float = def;
+    return &flag->val._float;
 }
 
 void parsec_double(double *ref, const char *s, const char *l, double def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_DOUBLE);
     flag->def._double = def;
+    flag->val._double = def;
     *ref = def;
+}
+
+double *parsec_double_ref(const char *s, const char *l, double def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, NULL, s, l, desc, PARSEC_DOUBLE);
+    flag->def._double = def;
+    flag->val._double = def;
+    return &flag->val._double;
 }
 
 void parsec_size(size_t *ref, const char *s, const char *l, size_t def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_SIZE);
     flag->def._size = def;
+    flag->val._size = def;
     *ref = def;
+}
+
+size_t *parsec_size_ref(const char *s, const char *l, float def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, NULL, s, l, desc, PARSEC_SIZE);
+    flag->def._size = def;
+    flag->val._size = def;
+    return &flag->val._size;
 }
 
 void parsec_char(char *ref, const char *s, const char *l, char def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_CHAR);
     flag->def._char = def;
+    flag->val._char = def;
     *ref = def;
+}
+
+char *parsec_char_ref(const char *s, const char *l, char def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, NULL, s, l, desc, PARSEC_CHAR);
+    flag->def._char = def;
+    flag->val._char = def;
+    return &flag->val._char;
 }
 
 void parsec_str(char **ref, const char *s, const char *l, char *def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_STR);
     flag->def._str = def;
+    flag->val._str = def;
     *ref = def;
+}
+
+char **parsec_str_ref(const char *s, const char *l, char *def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, NULL, s, l, desc, PARSEC_STR);
+    flag->def._str = def;
+    flag->val._str = def;
+    return &flag->val._str;
 }
 
 void parsec_string(ParsecString *ref, const char *s, const char *l, ParsecString def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_STRING);
     flag->def._string = def;
+    flag->val._string = def;
     *ref = def;
+}
+
+ParsecString *parsec_string_ref(const char *s, const char *l, ParsecString def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, NULL, s, l, desc, PARSEC_STRING);
+    flag->def._string = def;
+    flag->val._string = def;
+    return &flag->val._string;
 }
 
 void parsec_list(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_LIST);
     flag->def._list = def;
+    flag->val._list = def;
     *ref = def;
+}
+
+ParsecList *parsec_list_ref(const char *s, const char *l, ParsecList def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, NULL, s, l, desc, PARSEC_LIST);
+    flag->def._list = def;
+    flag->val._list = def;
+    return &flag->val._list;
 }
 
 void parsec_many(ParsecList *ref, const char *s, const char *l, ParsecList def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_MANY);
     flag->def._list = def;
+    flag->val._list = def;
     *ref = def;
+}
+
+ParsecList *parsec_many_ref(const char *s, const char *l, ParsecList def, const char *desc) {
+    ParsecFlag *flag = __parsec_add_flag(&parsec, NULL, s, l, desc, PARSEC_MANY);
+    flag->def._list = def;
+    flag->val._list = def;
+    return &flag->val._list;
 }
 
 void parsec_help() {
@@ -441,21 +590,21 @@ bool parsec_parse(int argc, char** argv) {
             if (is_short || is_long) {
                 switch (flag->type) {
                 case PARSEC_BOOL: {
-                    *(bool *)flag->ref = !flag->def._bool;
+                    *(bool *)__parsec_flag_ref(flag) = !flag->def._bool;
                 }
                 break;
 
                 case PARSEC_INT: {
                     char *val = parsec_shift(&argc, &argv);
-                    *(int *)flag->ref = atoi(val);
-                } 
+                    *(int *)__parsec_flag_ref(flag) = atoi(val);
+                }
                 break;
 
                 case PARSEC_FLOAT: {
                     char *val = parsec_shift(&argc, &argv);
 
                     char *endptr;
-                    *(float *)flag->ref = strtof(val, &endptr);
+                    *(float *)__parsec_flag_ref(flag) = strtof(val, &endptr);
 
                     if (*endptr != '\0') PARSEC_THROW(false, "error parsing '%s' to float: %s", arg, val);
                 }
@@ -465,7 +614,7 @@ bool parsec_parse(int argc, char** argv) {
                     char *val = parsec_shift(&argc, &argv);
 
                     char *endptr;
-                    *(double *)flag->ref = strtod(val, &endptr);
+                    *(double *)__parsec_flag_ref(flag) = strtod(val, &endptr);
 
                     if (*endptr != '\0') PARSEC_THROW(false, "error parsing '%s' to double: %s", arg, val);
                 }
@@ -475,7 +624,7 @@ bool parsec_parse(int argc, char** argv) {
                     char *val = parsec_shift(&argc, &argv);
 
                     char *endptr;
-                    *(size_t *)flag->ref = strtoull(val, &endptr, 10);
+                    *(size_t *)__parsec_flag_ref(flag) = strtoull(val, &endptr, 10);
 
                     if (*endptr != '\0') PARSEC_THROW(false, "error parsing '%s' to double: %s", arg, val);
                 }
@@ -483,19 +632,19 @@ bool parsec_parse(int argc, char** argv) {
 
                 case PARSEC_CHAR: {
                     char *val = parsec_shift(&argc, &argv);
-                    *(char *)flag->ref = val[0];
+                    *(char *)__parsec_flag_ref(flag) = val[0];
                 }
                 break;
 
                 case PARSEC_STR: {
                     char *val = parsec_shift(&argc, &argv);
-                    *(char **)flag->ref = val;
+                    *(char **)__parsec_flag_ref(flag) = val;
                 }
                 break;
 
                 case PARSEC_STRING: {
                     char *val = parsec_shift(&argc, &argv);
-                    *(ParsecString *)flag->ref = (ParsecString){
+                    *(ParsecString *)__parsec_flag_ref(flag) = (ParsecString){
                         .str = val,
                         .len = strlen(val)
                     };
@@ -508,13 +657,13 @@ bool parsec_parse(int argc, char** argv) {
                     ParsecList list = parsec_str_to_list(val, ",");
                     if (!list.items) PARSEC_THROW(false, "error converting to ParsecList '%s'", arg);
 
-                    *(ParsecList *)flag->ref = list;
+                    *(ParsecList *)__parsec_flag_ref(flag) = list;
                 }
                 break;
 
                 case PARSEC_MANY: {
                     char *val = parsec_shift(&argc, &argv);
-                    parsec_list_push((ParsecList *)flag->ref, val);
+                    parsec_list_push((ParsecList *)__parsec_flag_ref(flag), val);
                 }
                 break;
 
