@@ -82,12 +82,12 @@ void parsec_float(float *ref, const char *s, const char *l, float def, const cha
 /**
  * Adds a flag of type `PARSEC_DOUBLE` to the `parsec` context.
  */
-void parsec_double(float *ref, const char *s, const char *l, float def, const char *desc);
+void parsec_double(double *ref, const char *s, const char *l, double def, const char *desc);
 
 /**
  * Adds a flag of type `PARSEC_SIZE` to the `parsec` context.
  */
-void parsec_size(size_t *ref, const char *s, const char *l, float def, const char *desc);
+void parsec_size(size_t *ref, const char *s, const char *l, size_t def, const char *desc);
 
 /**
  * Adds a flag of type `PARSEC_CHAR` to the `parsec` context.
@@ -322,13 +322,13 @@ void parsec_float(float *ref, const char *s, const char *l, float def, const cha
     *ref = def;
 }
 
-void parsec_double(float *ref, const char *s, const char *l, float def, const char *desc) {
+void parsec_double(double *ref, const char *s, const char *l, double def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_DOUBLE);
     flag->def._double = def;
     *ref = def;
 }
 
-void parsec_size(size_t *ref, const char *s, const char *l, float def, const char *desc) {
+void parsec_size(size_t *ref, const char *s, const char *l, size_t def, const char *desc) {
     ParsecFlag *flag = __parsec_add_flag(&parsec, ref, s, l, desc, PARSEC_SIZE);
     flag->def._size = def;
     *ref = def;
