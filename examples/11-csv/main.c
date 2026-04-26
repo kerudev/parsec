@@ -39,7 +39,7 @@ size_t path_write(char *path, char *header, ParsecList lines) {
         bytes += fwrite(lines.items[i], sizeof(char), strlen(lines.items[i]), f);
         bytes += fputc('\n', f);
     }
-    
+
     fclose(f);
 
     return bytes;

@@ -5,7 +5,7 @@
 //
 // If you are not familiar with string views, they store a char* and its length.
 // This allows you to manipulate a string by its length, not by where `\0` is.
-// 
+//
 // Benefits of this approach:
 // - You can modify the data without allocations.
 // - The original string stays the same (no data destruction).
@@ -29,12 +29,12 @@ int main(int argc, char **argv) {
 
     parsec_str(
         &str, "-s", "--str", "",
-        "Flag that will be converted to char *"
+        "Flag that will be converted to char *."
     );
 
     parsec_string(
         &view,  "-v", "--view", (ParsecString){0},
-        "Flag that will be converted to ParsecString"
+        "Flag that will be converted to ParsecString."
     );
 
     // Parse the flags
@@ -67,7 +67,7 @@ int main(int argc, char **argv) {
     s[strlen(s) - 2] = 0;   // chop right
 
     view.str += 2;          // chop left
-    view.len -= 2;
+    view.len -= 2;          // chop left
     view.len -= 2;          // chop right
 
     printf("Printing the whole string (after chopping)\n");

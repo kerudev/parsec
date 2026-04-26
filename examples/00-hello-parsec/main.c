@@ -19,18 +19,14 @@ int main(int argc, char *argv[]) {
     parsec_init("hello", "Greets the user.");
 
     // Setup the flags
-    char *name;
-    int age;
-    float cash;
-
-    parsec_str(&name,   "-u", "--user", "<blank>", "User's name.");
-    parsec_int(&age,    "-a", "--age",          0, "User's age.");
-    parsec_float(&cash, "-c", "--cash",      0.0f, "User's cash.");
+    char **name = parsec_str_ref(  "-u", "--user", "<blank>", "User's name.");
+    int   *age  = parsec_int_ref(  "-a", "--age",          0, "User's age.");
+    float *cash = parsec_float_ref("-c", "--cash",      0.0f, "User's cash.");
 
     // Parse the flags
     if (!parsec_parse(argc, argv)) return 1;
 
-    printf("Hello %s! You are %d years old and you have $%.2f\n", name, age, cash);
+    printf("Hello %s! You are %d years old and you have $%.2f\n", *name, *age, *cash);
 
     return 0;
 }

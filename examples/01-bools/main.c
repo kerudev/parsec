@@ -17,11 +17,8 @@ int main(int argc, char **argv) {
     parsec_init("bools", "Takes boolean flags and prints their values.");
 
     // Setup "regular" bool flags
-    bool verbose;
-    bool dry_run;
-
-    parsec_bool(&verbose, "-v", "--verbose", false, "If provided, verbose printing is ON");
-    parsec_bool(&dry_run, NULL, "--dry-run", false, "If provided, the run will not save any data.");
+    bool *verbose = parsec_bool_ref("-v", "--verbose", false, "If provided, verbose printing is ON");
+    bool *dry_run = parsec_bool_ref(NULL, "--dry-run", false, "If provided, the run will not save any data.");
 
     // Setup "toggle" bool flags
     bool cov;
@@ -32,9 +29,9 @@ int main(int argc, char **argv) {
     // Parse the flags
     if (!parsec_parse(argc, argv)) return 1;
 
-    printf("verbose: %s\n", verbose ? "true" : "false");
-    printf("dry-run: %s\n", dry_run ? "true" : "false");
-    printf("cov    : %s\n", cov     ? "true" : "false");
+    printf("verbose: %s\n", *verbose ? "true" : "false");
+    printf("dry-run: %s\n", *dry_run ? "true" : "false");
+    printf("cov    : %s\n",  cov     ? "true" : "false");
 
     return 0;
 }
