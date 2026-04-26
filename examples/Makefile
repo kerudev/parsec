@@ -8,31 +8,19 @@ CFLAGS = -std=c99 \
 
 BUILD_DIR = build
 
-all: hello bools strings lists password csv
+EXAMPLES = \
+	00-hello-parsec \
+	01-bools \
+	02-strings \
+	03-lists \
+	10-password-generator \
+	11-csv
 
-hello:
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) ./00-hello-parsec/main.c -o ./$(BUILD_DIR)/parsec_$@
+all: $(EXAMPLES)
 
-bools:
+$(EXAMPLES):
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) ./01-bools/main.c -o ./$(BUILD_DIR)/parsec_$@
-
-strings:
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) ./02-strings/main.c -o ./$(BUILD_DIR)/parsec_$@
-
-lists:
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) ./03-lists/main.c -o ./$(BUILD_DIR)/parsec_$@
-
-password:
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) ./10-password-generator/main.c -o ./$(BUILD_DIR)/parsec_$@
-
-csv:
-	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) ./11-csv/main.c -o ./$(BUILD_DIR)/parsec_$@
+	$(CC) $(CFLAGS) ./$@/main.c -o ./$(BUILD_DIR)/$@
 
 clean:
 	rm -rf $(BUILD_DIR)/*
