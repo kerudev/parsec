@@ -40,6 +40,11 @@ typedef struct {
 } ParsecString;
 
 /**
+ * Returns a `ParsecString` that contains the original string and its length.
+ */
+ParsecString parsec_str_to_string(const char *s);
+
+/**
  * Splits `s` using `sep`.
  *
  * Returns a `ParsecList` that contains the splitted elements.
@@ -177,7 +182,7 @@ ParsecList *parsec_many_ref(const char *s, const char *l, ParsecList def, const 
 /**
  * Prints the help message.
  */
-void parsec_help();
+void parsec_help(bool long_help);
 
 /**
  * Set's the `name` and `description` of your program.
@@ -185,7 +190,12 @@ void parsec_help();
 void parsec_init(const char *name, const char *desc);
 
 /**
- * Consumes `argc` and `argv` and 
+ * Shifts `argv` by one.
+ */
+char *parsec_shift(int *argc, char ***argv);
+
+/**
+ * Consumes `argc` and `argv` and populates the flag pointers. 
  */
 bool parsec_parse(int argc, char** argv);
 
@@ -326,6 +336,13 @@ char *parsec_str_clone(const char *s) {
 }
 
 // Public
+
+ParsecString parsec_str_to_string(const char *s) {
+    return (ParsecString){
+        .str = s,
+        .len = strlen(s)
+    };
+}
 
 ParsecList parsec_str_to_list(const char *s, const char *sep) {
     char **items = malloc(sizeof(char *) * PARSEC_LIST_CAP);
@@ -513,7 +530,7 @@ ParsecList *parsec_many_ref(const char *s, const char *l, ParsecList def, const 
     return &flag->val._list;
 }
 
-void parsec_help() {
+void parsec_help(bool long_help) {
     printf("%s", parsec.name);
     if (parsec.desc) printf(" - %s", parsec.desc);
     printf("\n\n");
@@ -546,6 +563,57 @@ void parsec_help() {
         if      (has_short && !has_long) printf("%s%*c%s\n",     s,    offset, ' ', flag->desc);
         else if (!has_short && has_long) printf("    %s%*c%s\n", l,    offset, ' ', flag->desc);
         else                             printf("%s, %s%*c%s\n", s, l, offset, ' ', flag->desc);
+
+        if (!long_help) continue;
+
+        // longest + strlen(s) + comma + space + 2
+        offset = longest + strlen(s) + 1 + 1 + 2;
+
+        switch (flag->type) {
+        case PARSEC_BOOL: {
+            printf("%*cType: bool   - Default: %d\n", offset, ' ', flag->def._bool);
+            break;
+        }
+        case PARSEC_INT: {
+            printf("%*cType: int    - Default: %d\n", offset, ' ', flag->def._int);
+            break;
+        }
+        case PARSEC_FLOAT: {
+            printf("%*cType: float  - Default: %f\n", offset, ' ', flag->def._float);
+            break;
+        }
+        case PARSEC_DOUBLE: {
+            printf("%*cType: double - Default: %lf\n", offset, ' ', flag->def._double);
+            break;
+        }
+        case PARSEC_SIZE: {
+            printf("%*cType: size   - Default: %zu\n", offset, ' ', flag->def._size);
+            break;
+        }
+        case PARSEC_CHAR: {
+            printf("%*cType: char   - Default: %c\n", offset, ' ', flag->def._char);
+            break;
+        }
+        case PARSEC_STR: {
+            printf("%*cType: char*  - Default: \"%s\"\n", offset, ' ', flag->def._str ? flag->def._str : "");
+            break;
+        }
+        case PARSEC_STRING: {
+            printf("%*cType: string - Default: \"%s\"\n", offset, ' ', flag->def._string.len ? flag->def._string.str : "");
+            break;
+        }
+        // case PARSEC_LIST: {
+        //     printf("%*cType: list   - Default: %s\n", offset, ' ', flag->def._list);
+        //     break;
+        // }
+        // case PARSEC_MANY: {
+        //     printf("%*cType: list   - Default: %s\n", offset, ' ', flag->def._list);
+        //     break;
+        // }
+        default:
+            printf("%*cType: char* - Default: %s\n", offset, ' ', flag->def._str);
+            break;
+        }
     }
 }
 
@@ -576,8 +644,13 @@ bool parsec_parse(int argc, char** argv) {
         for (size_t i = 0; i < parsec.flags_len; i++) {
             ParsecFlag *flag = parsec.flags[i];
 
-            if (strcmp(arg, "-h") == 0 || strcmp(arg, "--help") == 0) {
-                parsec_help();
+            if (strcmp(arg, "-h") == 0) {
+                parsec_help(false);
+                exit(0);
+            }
+
+            if (strcmp(arg, "--help") == 0) {
+                parsec_help(true);
                 exit(0);
             }
 
@@ -644,10 +717,7 @@ bool parsec_parse(int argc, char** argv) {
 
                 case PARSEC_STRING: {
                     char *val = parsec_shift(&argc, &argv);
-                    *(ParsecString *)__parsec_flag_ref(flag) = (ParsecString){
-                        .str = val,
-                        .len = strlen(val)
-                    };
+                    *(ParsecString *)__parsec_flag_ref(flag) = parsec_str_to_string(val);
                 }
                 break;
 
@@ -655,7 +725,7 @@ bool parsec_parse(int argc, char** argv) {
                     char *val = parsec_shift(&argc, &argv);
 
                     ParsecList list = parsec_str_to_list(val, ",");
-                    if (!list.items) PARSEC_THROW(false, "error converting to ParsecList '%s'", arg);
+                    if (!list.cap) PARSEC_THROW(false, "error converting to ParsecList '%s'", arg);
 
                     *(ParsecList *)__parsec_flag_ref(flag) = list;
                 }

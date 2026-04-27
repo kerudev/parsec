@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     if (!parsec_parse(argc, argv)) return 1;
 
     if (!str || !view.len) {
-        parsec_help();
+        parsec_help(true);
         exit(1);
     }
 
